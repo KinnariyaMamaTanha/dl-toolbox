@@ -11,37 +11,6 @@ import torchvision
 from torchvision import models as tmodels
 
 
-class Linear(nn.Module):
-    """Linear Layer with Xavier Initialization, and 0 Bias."""
-
-    def __init__(self, in_dim, out_dim, xavier_init=False):
-        """Initialize Linear Layer w/ Xavier Init.
-
-        Args:
-            in_dim (int): Input Dimension
-            out_dim (int): Output Dimension
-            xavier_init (bool, optional): Whether to apply Xavier Initialization to Layer. Defaults to False.
-
-        """
-        super(Linear, self).__init__()
-        self.fc = nn.Linear(in_dim, out_dim)
-        if xavier_init:
-            nn.init.xavier_normal(self.fc.weight)
-            self.fc.bias.data.fill_(0.0)
-
-    def forward(self, x):
-        """Apply Linear Layer to Input.
-
-        Args:
-            x (torch.Tensor): Input Tensor
-
-        Returns:
-            torch.Tensor: Output Tensor
-
-        """
-        return self.fc(x)
-
-
 class Sequential(nn.Sequential):
     """Custom Sequential module for easier usage."""
 
@@ -62,9 +31,9 @@ class MLP(torch.nn.Module):
     def __init__(
         self,
         dims: Iterable,
+        activation: str = "ReLU",
         dropout: bool = False,
         p_dropout: float = 0.1,
-        activation=nn.ReLU,
     ):
         """Initialize two-layered perceptron.
 
@@ -78,7 +47,10 @@ class MLP(torch.nn.Module):
         zipped_dims = zip(dims[:-1], dims[1:])
         self.layers = [nn.Linear(in_dim, out_dim) for (in_dim, out_dim) in zipped_dims]
         self.dropout = dropout
-        self.activation = activation()
+        try:
+            self.activation = getattr(nn, activation)
+        except:
+            raise ValueError("Error: activation function not found in torch library")
         if dropout:
             self.dropout_layer = nn.Dropout(p_dropout)
 
